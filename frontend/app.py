@@ -49,6 +49,46 @@ elif app_mode == "Diabetes Diagnosis (Classification)":
         bp_input = st.number_input("Systolic Blood Pressure", min_value=70, max_value=200, value=120)
     
     if st.button("Predict Diabetes Status"):
+        # 1. Format the data exactly how the model expects it
+        input_data = pd.DataFrame({
+            'glucose_fasting': [glucose_input],
+            'bmi': [bmi_input],
+            'age': [age_input],
+            'systolic_bp': [bp_input]
+        })
+        
+        # 2. Get the prediction and probability
+        prediction = clf_model.predict(input_data)[0]
+        probability = clf_model.predict_proba(input_data)[0][1] 
+        
+        # 3. Display the Diagnosis Results
+        st.markdown("---")
+        st.subheader("📋 Diagnosis Results")
+        if prediction == 1:
+            st.error(f"⚠️ **High Risk of Diabetes detected.** (AI Confidence: {probability*100:.1f}%)")
+        else:
+            st.success(f"✅ **Low Risk of Diabetes.** (AI Confidence: {(1-probability)*100:.1f}%)")
+            
+        # ==========================================
+        # NEW: EXPLAINABLE AI (Feature Importance)
+        # ==========================================
+        st.markdown("---")
+        st.subheader("🧠 Why did the AI make this decision?")
+        st.write("Here is how much weight the AI gave to each of your metrics:")
+        
+        # Extract the learned 'weights' (coefficients) from the Logistic Regression model
+        # We use absolute values because we just care about the *strength* of the importance
+        import numpy as np
+        feature_importance = np.abs(clf_model.coef_[0])
+        
+        # Create a tiny dataframe just for the chart
+        importance_df = pd.DataFrame({
+            'Metric': ['Fasting Glucose', 'BMI', 'Age', 'Blood Pressure'],
+            'Importance Score': feature_importance
+        }).set_index('Metric')
+        
+        # Draw a bar chart in Streamlit!
+        st.bar_chart(importance_df)
         # Format the data exactly how the model expects it
         input_data = pd.DataFrame({
             'glucose_fasting': [glucose_input],
